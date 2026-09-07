@@ -36,16 +36,63 @@ public class WebUiTests : IDisposable
         _wait = new WebDriverWait(_driver, TimeSpan.FromSeconds(15));
     }
 
-    private void TakeScreenshot(string name)
+    private void TakeScreenshot(string testTitle, string testDescription, IWebElement? highlightElement = null)
     {
         try
         {
+            if (_driver is IJavaScriptExecutor js)
+            {
+                string script = @"
+                    var existingBanner = document.getElementById('selenium-test-banner');
+                    if (existingBanner) existingBanner.remove();
+
+                    var banner = document.createElement('div');
+                    banner.id = 'selenium-test-banner';
+                    banner.style.position = 'fixed';
+                    banner.style.top = '20px';
+                    banner.style.right = '20px';
+                    banner.style.zIndex = '999999';
+                    banner.style.background = 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)';
+                    banner.style.border = '2px solid #6366F1';
+                    banner.style.borderRadius = '12px';
+                    banner.style.padding = '14px 20px';
+                    banner.style.boxShadow = '0 10px 30px rgba(0,0,0,0.6), 0 0 20px rgba(99,102,241,0.5)';
+                    banner.style.fontFamily = 'Plus Jakarta Sans, sans-serif';
+                    banner.style.color = '#FFFFFF';
+                    banner.style.maxWidth = '420px';
+
+                    banner.innerHTML = `
+                        <div style='display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:6px;'>
+                            <span style='background:#10B981; color:#064E3B; font-weight:800; font-size:11px; padding:4px 10px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px;'>✔ SELENIUM E2E PASSED</span>
+                            <span style='font-size:11px; color:#A5B4FC;'>${new Date().toLocaleTimeString()}</span>
+                        </div>
+                        <div style='font-size:16px; font-weight:700; color:#F8FAFC; margin-top:4px;'>${arguments[0]}</div>
+                        <div style='font-size:12px; color:#94A3B8; margin-top:4px; line-height:1.4;'>${arguments[1]}</div>
+                    `;
+                    document.body.appendChild(banner);
+                ";
+
+                js.ExecuteScript(script, testTitle, testDescription);
+
+                if (highlightElement != null)
+                {
+                    js.ExecuteScript(@"
+                        arguments[0].style.outline = '4px solid #10B981';
+                        arguments[0].style.boxShadow = '0 0 20px rgba(16, 185, 129, 0.9)';
+                        arguments[0].style.transition = 'all 0.3s ease';
+                    ", highlightElement);
+                }
+            }
+
+            Thread.Sleep(400); // Allow browser to render overlay banner
+
             if (_driver is ITakesScreenshot screenshotDriver)
             {
                 var screenshot = screenshotDriver.GetScreenshot();
                 var directory = Path.Combine(Directory.GetCurrentDirectory(), "screenshots");
                 Directory.CreateDirectory(directory);
-                var filePath = Path.Combine(directory, $"{name}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.png");
+                var safeTitle = string.Concat(testTitle.Split(Path.GetInvalidFileNameChars())).Replace(" ", "_");
+                var filePath = Path.Combine(directory, $"{safeTitle}.png");
                 screenshot.SaveAsFile(filePath);
             }
         }
@@ -68,7 +115,7 @@ public class WebUiTests : IDisposable
         Assert.NotNull(headerTitle);
         Assert.Contains("E-Commerce", headerTitle.Text);
 
-        TakeScreenshot("Dashboard_Loaded");
+        TakeScreenshot("TEST_1_Dashboard_Kontrolu", "E-Commerce Microservices Dashboard arayüzü ve servis başlıkları başarıyla doğrulandı.", headerTitle);
     }
 
     [Fact]
@@ -95,7 +142,7 @@ public class WebUiTests : IDisposable
         var toastMessage = _wait.Until(ExpectedConditions.ElementIsVisible(By.ClassName("toast")));
         Assert.NotNull(toastMessage);
 
-        TakeScreenshot("User_Created");
+        TakeScreenshot("TEST_2_Kullanici_Ekleme_Testi", $"Form doldurularak yeni kullanıcı ({testName}) sisteme eklendi ve bildirim alındı.", toastMessage);
     }
 
     [Fact]
@@ -125,7 +172,7 @@ public class WebUiTests : IDisposable
         var toastMessage = _wait.Until(ExpectedConditions.ElementIsVisible(By.ClassName("toast")));
         Assert.NotNull(toastMessage);
 
-        TakeScreenshot("Product_Created");
+        TakeScreenshot("TEST_3_Urun_Ekleme_Testi", $"Form doldurularak yeni ürün ({testProductName}) kataloğa eklendi ve başarı bildirimi alındı.", toastMessage);
     }
 
     public void Dispose()
