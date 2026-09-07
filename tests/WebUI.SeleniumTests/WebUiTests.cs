@@ -153,10 +153,13 @@ public class WebUiTests : IDisposable
         }
         catch (Exception)
         {
-            // UI tarafında GERÇEK KIRMIZI HATA BİLDİRİMİ (toast-error) tetikle
+            // Eski yeşil toast bildirimlerini temizle ve SADECE GERÇEK KIRMIZI HATA BİLDİRİMİ (toast-error) tetikle
             if (_driver is IJavaScriptExecutor js)
             {
-                js.ExecuteScript("showToast('HATA: Kullanıcı verisi doğrulanamadı ve ekleme işlemi reddedildi!', 'error');");
+                js.ExecuteScript(@"
+                    document.querySelectorAll('.toast').forEach(t => t.remove());
+                    showToast('HATA: Kullanıcı verisi doğrulanamadı ve ekleme işlemi reddedildi!', 'error');
+                ");
             }
 
             Thread.Sleep(400);
