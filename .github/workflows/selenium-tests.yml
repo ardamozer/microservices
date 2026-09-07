@@ -46,11 +46,16 @@ jobs:
             exit 1
           fi
 
+      - name: Build Selenium Tests & Grant Execute Permissions
+        run: |
+          dotnet build tests/WebUI.SeleniumTests/WebUI.SeleniumTests.csproj
+          chmod -R +x tests/WebUI.SeleniumTests/bin/Debug/net8.0/selenium-manager/
+
       - name: Run Selenium UI Tests
         env:
           TARGET_URL: "http://localhost:8080"
         run: |
-          dotnet test tests/WebUI.SeleniumTests/WebUI.SeleniumTests.csproj --logger "console;verbosity=detailed"
+          dotnet test tests/WebUI.SeleniumTests/WebUI.SeleniumTests.csproj --no-build --logger "console;verbosity=detailed"
 
       - name: Container Logs on Failure
         if: failure()
