@@ -42,6 +42,12 @@ public class WebUiTests : IDisposable
         {
             if (_driver is IJavaScriptExecutor js)
             {
+                // Eğer HATA durumu ise tüm ekranlarda eski yeşil toast'ları otomatik temizle (Global çözüm)
+                if (!isSuccess)
+                {
+                    js.ExecuteScript("document.querySelectorAll('.toast-success, .toast-info').forEach(t => t.remove());");
+                }
+
                 string badgeBg = isSuccess ? "#10B981" : "#EF4444";
                 string badgeColor = isSuccess ? "#064E3B" : "#7F1D1D";
                 string badgeText = isSuccess ? "✔ SELENIUM E2E PASSED" : "✖ SELENIUM E2E FAILED";
@@ -129,8 +135,7 @@ public class WebUiTests : IDisposable
     {
         _driver.Navigate().GoToUrl(_baseUrl);
 
-        var userFormCard = _wait.Until(ExpectedConditions.ElementIsVisible(By.Id("addUserForm")));
-        var nameInput = _driver.FindElement(By.Id("userName"));
+        var nameInput = _wait.Until(ExpectedConditions.ElementIsVisible(By.Id("userName")));
         var emailInput = _driver.FindElement(By.Id("userEmail"));
         var submitButton = _driver.FindElement(By.CssSelector("#addUserForm button[type='submit']"));
 
@@ -145,33 +150,11 @@ public class WebUiTests : IDisposable
 
         submitButton.Click();
 
-        try
-        {
-            // BILEREK BOZULAN KONTROL (KULLANICI EKLEME TESTI HATA SENARYOSU)
-            var nonExistentToast = _driver.FindElement(By.Id("non-existent-user-success-toast-123"));
-            Assert.NotNull(nonExistentToast);
-        }
-        catch (Exception)
-        {
-            // Eski yeşil toast bildirimlerini temizle ve SADECE GERÇEK KIRMIZI HATA BİLDİRİMİ (toast-error) tetikle
-            if (_driver is IJavaScriptExecutor js)
-            {
-                js.ExecuteScript(@"
-                    document.querySelectorAll('.toast').forEach(t => t.remove());
-                    showToast('HATA: Kullanıcı verisi doğrulanamadı ve ekleme işlemi reddedildi!', 'error');
-                ");
-            }
+        // Verify toast notification or presence in user list
+        var toastMessage = _wait.Until(ExpectedConditions.ElementIsVisible(By.ClassName("toast")));
+        Assert.NotNull(toastMessage);
 
-            Thread.Sleep(400);
-
-            // Sağ alttaki KIRMIZI HATA BİLDİRİMİNİ bul ve etrafını KIRMIZI KUTU içine al
-            var errorToast = _driver.FindElement(By.CssSelector(".toast-error"));
-
-            TakeScreenshot("TEST_2_Kullanici_Ekleme_Testi_HATA", $"BILEREK BOZULDU: Kullanıcı ({testName}) ekleme işlemi reddedildi ve UI tarafında Hata Bildirimi alındı!", errorToast, isSuccess: false);
-            throw; // Re-throw to make xUnit mark this test as FAILED
-        }
-
-        TakeScreenshot("TEST_2_Kullanici_Ekleme_Testi", $"Form doldurularak yeni kullanıcı ({testName}) sisteme eklendi ve bildirim alındı.", userFormCard);
+        TakeScreenshot("TEST_2_Kullanici_Ekleme_Testi", $"Form doldurularak yeni kullanıcı ({testName}) sisteme eklendi ve bildirim alındı.", toastMessage, isSuccess: true);
     }
 
     [Fact]
@@ -197,11 +180,28 @@ public class WebUiTests : IDisposable
 
         submitButton.Click();
 
-        // Verify toast message
-        var toastMessage = _wait.Until(ExpectedConditions.ElementIsVisible(By.ClassName("toast")));
-        Assert.NotNull(toastMessage);
+        try
+        {
+            // BILEREK BOZULAN KONTROL (ÜRÜN EKLEME TESTI HATA SENARYOSU)
+            var nonExistentToast = _driver.FindElement(By.Id("non-existent-product-toast-999"));
+            Assert.NotNull(nonExistentToast);
+        }
+        catch (Exception)
+        {
+            // UI tarafında GERÇEK KIRMIZI HATA BİLDİRİMİ (toast-error) tetikle
+            if (_driver is IJavaScriptExecutor js)
+            {
+                js.ExecuteScript("showToast('HATA: Ürün kaydı başarısız! Stok verisi veya fiyat tutarı geçersiz.', 'error');");
+            }
 
-        TakeScreenshot("TEST_3_Urun_Ekleme_Testi", $"Form doldurularak yeni ürün ({testProductName}) kataloğa eklendi ve başarı bildirimi alındı.", toastMessage);
+            Thread.Sleep(400);
+
+            var errorToast = _driver.FindElement(By.CssSelector(".toast-error"));
+            TakeScreenshot("TEST_3_Urun_Ekleme_Testi_HATA", $"BILEREK BOZULDU: Ürün ({testProductName}) kaydı reddedildi ve UI tarafında Hata Bildirimi alındı!", errorToast, isSuccess: false);
+            throw; // Re-throw to make xUnit mark this test as FAILED
+        }
+
+        TakeScreenshot("TEST_3_Urun_Ekleme_Testi", $"Form doldurularak yeni ürün ({testProductName}) kataloğa eklendi.", productNameInput);
     }
 
     public void Dispose()
