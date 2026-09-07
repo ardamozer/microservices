@@ -129,7 +129,8 @@ public class WebUiTests : IDisposable
     {
         _driver.Navigate().GoToUrl(_baseUrl);
 
-        var nameInput = _wait.Until(ExpectedConditions.ElementIsVisible(By.Id("userName")));
+        var userFormCard = _wait.Until(ExpectedConditions.ElementIsVisible(By.Id("addUserForm")));
+        var nameInput = _driver.FindElement(By.Id("userName"));
         var emailInput = _driver.FindElement(By.Id("userEmail"));
         var submitButton = _driver.FindElement(By.CssSelector("#addUserForm button[type='submit']"));
 
@@ -144,11 +145,20 @@ public class WebUiTests : IDisposable
 
         submitButton.Click();
 
-        // Verify toast notification or presence in user list
-        var toastMessage = _wait.Until(ExpectedConditions.ElementIsVisible(By.ClassName("toast")));
-        Assert.NotNull(toastMessage);
+        try
+        {
+            // BILEREK BOZULAN KONTROL (KULLANICI EKLEME TESTI HATA SENARYOSU)
+            var nonExistentToast = _driver.FindElement(By.Id("non-existent-user-success-toast-123"));
+            Assert.NotNull(nonExistentToast);
+        }
+        catch (Exception)
+        {
+            // HATA DURUMU: Kullanıcı Ekleme Formunu KIRMIZI KUTU içine al ve Kırmızı Banner Bas
+            TakeScreenshot("TEST_2_Kullanici_Ekleme_Testi_HATA", $"BILEREK BOZULDU: Kullanıcı ({testName}) ekleme sonrası 'non-existent-user-success-toast-123' elementi bulunamadı!", userFormCard, isSuccess: false);
+            throw; // Re-throw to make xUnit mark this test as FAILED
+        }
 
-        TakeScreenshot("TEST_2_Kullanici_Ekleme_Testi", $"Form doldurularak yeni kullanıcı ({testName}) sisteme eklendi ve bildirim alındı.", toastMessage);
+        TakeScreenshot("TEST_2_Kullanici_Ekleme_Testi", $"Form doldurularak yeni kullanıcı ({testName}) sisteme eklendi ve bildirim alındı.", userFormCard);
     }
 
     [Fact]
