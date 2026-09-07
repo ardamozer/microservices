@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Commerce Microservices Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Header Navigation -->
+        <header class="main-header">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-cubes-stacked"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>E-Commerce <span>Microservices</span></h1>
+                    <p class="subtitle">Distributed Architecture Control Center</p>
+                </div>
+            </div>
+
+            <div class="header-status">
+                <div class="rate-limit-pill" id="rateLimitCard" title="Redis Rate Limiting Status">
+                    <i class="fa-solid fa-gauge-high"></i>
+                    <span>Rate Limit: <strong id="rateLimitRemaining">--</strong> / <span id="rateLimitMax">100</span> req/min</span>
+                </div>
+                <div class="gateway-status-pill online" id="gatewayStatusPill">
+                    <span class="status-dot"></span>
+                    <span id="gatewayStatusText">ApiGateway (5000)</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Layout -->
+        <main class="dashboard-grid">
+            <!-- Left Sidebar / Stats & Quick Forms -->
+            <aside class="sidebar">
+                <!-- System Services Health Panel -->
+                <section class="card glass-card">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-server"></i> Servis Sağlığı</h2>
+                        <button class="icon-btn" onclick="checkServicesHealth()" title="Sağlığı Yenile"><i class="fa-solid fa-arrows-rotate"></i></button>
+                    </div>
+                    <div class="services-list" id="servicesHealthList">
+                        <div class="service-item">
+                            <span class="service-name"><i class="fa-solid fa-user-gear"></i> User Service</span>
+                            <span class="badge badge-secondary" id="health-user">Kontrol...</span>
+                        </div>
+                        <div class="service-item">
+                            <span class="service-name"><i class="fa-solid fa-box-open"></i> Product Service</span>
+                            <span class="badge badge-secondary" id="health-product">Kontrol...</span>
+                        </div>
+                        <div class="service-item">
+                            <span class="service-name"><i class="fa-solid fa-cart-shopping"></i> Order Service</span>
+                            <span class="badge badge-secondary" id="health-order">Kontrol...</span>
+                        </div>
+                        <div class="service-item">
+                            <span class="service-name"><i class="fa-solid fa-bell"></i> Notification Service</span>
+                            <span class="badge badge-secondary" id="health-notification">Kontrol...</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Create User Quick Form -->
+                <section class="card glass-card">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-user-plus"></i> Yeni Kullanıcı Ekle</h2>
+                    </div>
+                    <form id="addUserForm" onsubmit="handleCreateUser(event)">
+                        <div class="form-group">
+                            <label for="userName">Ad Soyad</label>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-regular fa-user"></i>
+                                <input type="text" id="userName" placeholder="Örn: Caner Yılmaz" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="userEmail">E-posta</label>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-regular fa-envelope"></i>
+                                <input type="email" id="userEmail" placeholder="Örn: caner@example.com" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fa-solid fa-plus"></i> Kullanıcı Oluştur
+                        </button>
+                    </form>
+                </section>
+
+                <!-- Create Product Quick Form -->
+                <section class="card glass-card">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-folder-plus"></i> Yeni Ürün Ekle</h2>
+                    </div>
+                    <form id="addProductForm" onsubmit="handleCreateProduct(event)">
+                        <div class="form-group">
+                            <label for="productName">Ürün Adı</label>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-solid fa-tag"></i>
+                                <input type="text" id="productName" placeholder="Örn: Akıllı Saat v2" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col">
+                                <label for="productPrice">Fiyat (₺)</label>
+                                <input type="number" id="productPrice" placeholder="5000" min="1" step="0.01" required>
+                            </div>
+                            <div class="form-group col">
+                                <label for="productStock">Stok</label>
+                                <input type="number" id="productStock" placeholder="20" min="0" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-accent btn-block">
+                            <i class="fa-solid fa-box font-icon"></i> Ürün Kaydet
+                        </button>
+                    </form>
+                </section>
+            </aside>
+
+            <!-- Main Content Area -->
+            <div class="content-area">
+                <!-- Top Tabs & Stats Bar -->
+                <div class="dashboard-banner glass-card">
+                    <div class="banner-stat">
+                        <span class="stat-value" id="statUserCount">0</span>
+                        <span class="stat-label">Toplam Kullanıcı</span>
+                    </div>
+                    <div class="banner-stat">
+                        <span class="stat-value" id="statProductCount">0</span>
+                        <span class="stat-label">Toplam Ürün</span>
+                    </div>
+                    <div class="banner-stat">
+                        <span class="stat-value" id="statOrderCount">0</span>
+                        <span class="stat-label">Toplam Sipariş</span>
+                    </div>
+                    <div class="banner-stat">
+                        <span class="stat-value" id="statNotificationCount">0</span>
+                        <span class="stat-label">Tetiklenen Event</span>
+                    </div>
+                </div>
+
+                <!-- Products Grid Section -->
+                <section class="card glass-card">
+                    <div class="card-header">
+                        <div class="title-with-badge">
+                            <h2><i class="fa-solid fa-store"></i> Ürün Kataloğu</h2>
+                            <span class="badge badge-info" id="productInstanceBadge">Round-Robin Balancing</span>
+                        </div>
+                        <button class="btn btn-sm btn-secondary" onclick="loadProducts()">
+                            <i class="fa-solid fa-rotate-right"></i> Yenile
+                        </button>
+                    </div>
+
+                    <div class="products-grid" id="productsGrid">
+                        <!-- Product Cards JS ile yüklenecek -->
+                        <div class="loading-spinner"><i class="fa-solid fa-circle-notch fa-spin"></i> Ürünler yükleniyor...</div>
+                    </div>
+                </section>
+
+                <!-- Users and Order Creation Panel -->
+                <div class="two-col-grid">
+                    <!-- Users List -->
+                    <section class="card glass-card">
+                        <div class="card-header">
+                            <h2><i class="fa-solid fa-users"></i> Kullanıcılar</h2>
+                            <button class="btn btn-sm btn-secondary" onclick="loadUsers()">
+                                <i class="fa-solid fa-rotate-right"></i> Yenile
+                            </button>
+                        </div>
+                        <div class="users-list-wrapper">
+                            <ul class="users-list" id="usersList">
+                                <li class="loading-text">Kullanıcılar yükleniyor...</li>
+                            </ul>
+                        </div>
+                    </section>
+
+                    <!-- Order Creation / Quick Buy -->
+                    <section class="card glass-card highlight-card">
+                        <div class="card-header">
+                            <h2><i class="fa-solid fa-cart-arrow-down"></i> Hızlı Sipariş Ver</h2>
+                            <span class="badge badge-warning" title="Redis Distributed Lock + Polly Retry">Resilience & Lock</span>
+                        </div>
+                        <form id="createOrderForm" onsubmit="handleCreateOrder(event)">
+                            <div class="form-group">
+                                <label for="orderUserSelect">Siparişi Veren Kullanıcı</label>
+                                <select id="orderUserSelect" required>
+                                    <option value="">-- Kullanıcı Seçin --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="orderProductSelect">Satın Alınacak Ürün</label>
+                                <select id="orderProductSelect" required>
+                                    <option value="">-- Ürün Seçin --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="orderQuantity">Adet</label>
+                                <input type="number" id="orderQuantity" value="1" min="1" max="100" required>
+                            </div>
+                            <button type="submit" class="btn btn-success btn-block btn-lg" id="submitOrderBtn">
+                                <i class="fa-solid fa-bolt"></i> Siparişi Tamamla (Publish Event)
+                            </button>
+                        </form>
+                    </section>
+                </div>
+
+                <!-- Orders History Table -->
+                <section class="card glass-card">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-list-check"></i> Sipariş Geçmişi (SQL Persistence)</h2>
+                        <button class="btn btn-sm btn-secondary" onclick="loadOrders()">
+                            <i class="fa-solid fa-rotate-right"></i> Yenile
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="custom-table">
+                            <thead>
+                                <tr>
+                                    <th>Sipariş ID</th>
+                                    <th>Kullanıcı ID</th>
+                                    <th>Ürün Adı</th>
+                                    <th>Adet</th>
+                                    <th>Tarih</th>
+                                    <th>Durum</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ordersTableBody">
+                                <tr><td colspan="6" class="text-center">Sipariş verisi yükleniyor...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Notifications / Redis PubSub Live Stream Log -->
+                <section class="card glass-card notification-section">
+                    <div class="card-header">
+                        <div class="title-with-badge">
+                            <h2><i class="fa-solid fa-bullhorn"></i> Live Redis Pub/Sub Event Log</h2>
+                            <span class="badge badge-purple" id="pubsubStatus">OrderCreated Channel</span>
+                        </div>
+                        <button class="btn btn-sm btn-secondary" onclick="loadNotifications()">
+                            <i class="fa-solid fa-rotate-right"></i> Yenile
+                        </button>
+                    </div>
+                    <div class="notifications-feed" id="notificationsFeed">
+                        <div class="empty-feed">Henüz yayınlanmış event bildirimi yok. Sipariş vererek Pub/Sub mekanizmasını tetikleyin.</div>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- Toast Notifications Container -->
+        <div id="toastContainer" class="toast-container"></div>
+    </div>
+
+    <!-- Script -->
+    <script src="app.js"></script>
+</body>
+</html>

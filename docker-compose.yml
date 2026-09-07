@@ -1,0 +1,139 @@
+services:
+  redis:
+    image: redis:alpine
+    container_name: redis-cache
+    ports:
+      - "6379:6379"
+    restart: always
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver-db
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=YourStrong@Passw0rd!
+    ports:
+      - "1433:1433"
+    restart: always
+
+  user-service:
+    build:
+      context: .
+      dockerfile: src/UserService/Dockerfile
+    container_name: user-service
+    ports:
+      - "5001:5001"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Services__OrderService=http://order-service-1:5003
+    depends_on:
+      - redis
+
+  product-service-1:
+    build:
+      context: .
+      dockerfile: src/ProductService/Dockerfile
+    container_name: product-service-1
+    ports:
+      - "5002:5002"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - INSTANCE_ID=ProductService-Instance-1
+      - Redis__ConnectionString=redis:6379
+    depends_on:
+      - redis
+
+  product-service-2:
+    build:
+      context: .
+      dockerfile: src/ProductService/Dockerfile
+    container_name: product-service-2
+    ports:
+      - "5012:5002"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - INSTANCE_ID=ProductService-Instance-2
+      - Redis__ConnectionString=redis:6379
+    depends_on:
+      - redis
+
+  order-service-1:
+    build:
+      context: .
+      dockerfile: src/OrderService/Dockerfile
+    container_name: order-service-1
+    ports:
+      - "5003:5003"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - INSTANCE_ID=OrderService-Instance-1
+      - Redis__ConnectionString=redis:6379
+      - Services__ProductService=http://product-service-1:5002
+    depends_on:
+      - redis
+      - product-service-1
+
+  order-service-2:
+    build:
+      context: .
+      dockerfile: src/OrderService/Dockerfile
+    container_name: order-service-2
+    ports:
+      - "5013:5003"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - INSTANCE_ID=OrderService-Instance-2
+      - Redis__ConnectionString=redis:6379
+      - Services__ProductService=http://product-service-2:5002
+    depends_on:
+      - redis
+      - product-service-2
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: src/NotificationService/Dockerfile
+    container_name: notification-service
+    ports:
+      - "5004:5004"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Redis__ConnectionString=redis:6379
+    depends_on:
+      - redis
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: src/ApiGateway/Dockerfile
+    container_name: api-gateway
+    ports:
+      - "5000:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Redis__ConnectionString=redis:6379
+      - USER_SERVICE_URL=http://user-service:5001
+      - PRODUCT_SERVICE_URL_1=http://product-service-1:5002
+      - PRODUCT_SERVICE_URL_2=http://product-service-2:5002
+      - ORDER_SERVICE_URL_1=http://order-service-1:5003
+      - ORDER_SERVICE_URL_2=http://order-service-2:5003
+      - NOTIFICATION_SERVICE_URL=http://notification-service:5004
+    depends_on:
+      - redis
+      - user-service
+      - product-service-1
+      - product-service-2
+      - order-service-1
+      - order-service-2
+      - notification-service
+
+  web-ui:
+    image: nginx:alpine
+    container_name: web-ui
+    ports:
+      - "8080:80"
+    volumes:
+      - ./src/WebUI:/usr/share/nginx/html:ro
+    depends_on:
+      - api-gateway
+

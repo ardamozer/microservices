@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ApiGateway/ApiGateway.csproj" />
+    <Project Path="src/NotificationService/NotificationService.csproj" />
+    <Project Path="src/OrderService/OrderService.csproj" />
+    <Project Path="src/ProductService/ProductService.csproj" />
+    <Project Path="src/UserService/UserService.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/WebUI.SeleniumTests/WebUI.SeleniumTests.csproj" />
+  </Folder>
+</Solution>
