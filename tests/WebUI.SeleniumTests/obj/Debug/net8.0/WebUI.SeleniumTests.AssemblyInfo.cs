@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("WebUI.SeleniumTests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+faed4b111ecdc5eeafd2522a08b05270e5f517c6")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fcca025705c989dfef35a16b135f70ac5fc4ca37")]
 [assembly: System.Reflection.AssemblyProductAttribute("WebUI.SeleniumTests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("WebUI.SeleniumTests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

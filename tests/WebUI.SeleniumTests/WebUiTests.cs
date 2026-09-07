@@ -206,20 +206,11 @@ public class WebUiTests : IDisposable
 
         submitButton.Click();
 
-        try
-        {
-            // BILEREK BOZULAN KONTROL (ÜRÜN EKLEME TESTI HATA SENARYOSU)
-            var nonExistentToast = _driver.FindElement(By.Id("non-existent-product-toast-999"));
-            Assert.NotNull(nonExistentToast);
-        }
-        catch (Exception)
-        {
-            // GENEL ÇÖZÜM: Hangi test olursa olsun, HATA anında TakeScreenshot(..., isSuccess: false) çağrılması yeterli!
-            TakeScreenshot("TEST_3_Urun_Ekleme_Testi_HATA", $"BILEREK BOZULDU: Ürün ({testProductName}) kaydı reddedildi ve UI tarafında Hata Bildirimi alındı!", null, isSuccess: false);
-            throw; // Re-throw to make xUnit mark this test as FAILED
-        }
+        // Verify toast message
+        var toastMessage = _wait.Until(ExpectedConditions.ElementIsVisible(By.ClassName("toast")));
+        Assert.NotNull(toastMessage);
 
-        TakeScreenshot("TEST_3_Urun_Ekleme_Testi", $"Form doldurularak yeni ürün ({testProductName}) kataloğa eklendi.", productNameInput);
+        TakeScreenshot("TEST_3_Urun_Ekleme_Testi", $"Form doldurularak yeni ürün ({testProductName}) kataloğa eklendi ve başarı bildirimi alındı.", toastMessage, isSuccess: true);
     }
 
     public void Dispose()
