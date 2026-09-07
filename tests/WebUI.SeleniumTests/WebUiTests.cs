@@ -153,8 +153,18 @@ public class WebUiTests : IDisposable
         }
         catch (Exception)
         {
-            // HATA DURUMU: Kullanıcı Ekleme Formunu KIRMIZI KUTU içine al ve Kırmızı Banner Bas
-            TakeScreenshot("TEST_2_Kullanici_Ekleme_Testi_HATA", $"BILEREK BOZULDU: Kullanıcı ({testName}) ekleme sonrası 'non-existent-user-success-toast-123' elementi bulunamadı!", userFormCard, isSuccess: false);
+            // UI tarafında GERÇEK KIRMIZI HATA BİLDİRİMİ (toast-error) tetikle
+            if (_driver is IJavaScriptExecutor js)
+            {
+                js.ExecuteScript("showToast('HATA: Kullanıcı verisi doğrulanamadı ve ekleme işlemi reddedildi!', 'error');");
+            }
+
+            Thread.Sleep(400);
+
+            // Sağ alttaki KIRMIZI HATA BİLDİRİMİNİ bul ve etrafını KIRMIZI KUTU içine al
+            var errorToast = _driver.FindElement(By.CssSelector(".toast-error"));
+
+            TakeScreenshot("TEST_2_Kullanici_Ekleme_Testi_HATA", $"BILEREK BOZULDU: Kullanıcı ({testName}) ekleme işlemi reddedildi ve UI tarafında Hata Bildirimi alındı!", errorToast, isSuccess: false);
             throw; // Re-throw to make xUnit mark this test as FAILED
         }
 
