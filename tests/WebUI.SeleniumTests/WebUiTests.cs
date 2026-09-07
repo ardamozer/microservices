@@ -45,7 +45,8 @@ public class WebUiTests : IDisposable
                 string badgeBg = isSuccess ? "#10B981" : "#EF4444";
                 string badgeColor = isSuccess ? "#064E3B" : "#7F1D1D";
                 string badgeText = isSuccess ? "✔ SELENIUM E2E PASSED" : "✖ SELENIUM E2E FAILED";
-                string borderColor = isSuccess ? "#6366F1" : "#EF4444";
+                string borderColor = isSuccess ? "#10B981" : "#EF4444";
+                string glowShadowColor = isSuccess ? "rgba(16, 185, 129, 0.5)" : "rgba(239, 68, 68, 0.5)";
 
                 string script = @"
                     var existingBanner = document.getElementById('selenium-test-banner');
@@ -61,7 +62,7 @@ public class WebUiTests : IDisposable
                     banner.style.border = '2px solid " + borderColor + @"';
                     banner.style.borderRadius = '12px';
                     banner.style.padding = '14px 20px';
-                    banner.style.boxShadow = '0 10px 30px rgba(0,0,0,0.6), 0 0 20px rgba(239,68,68,0.5)';
+                    banner.style.boxShadow = '0 10px 30px rgba(0,0,0,0.6), 0 0 20px " + glowShadowColor + @"';
                     banner.style.fontFamily = 'Plus Jakarta Sans, sans-serif';
                     banner.style.color = '#FFFFFF';
                     banner.style.maxWidth = '420px';
@@ -81,9 +82,11 @@ public class WebUiTests : IDisposable
 
                 if (highlightElement != null)
                 {
+                    string outlineColor = isSuccess ? "#10B981" : "#EF4444";
+                    string elementGlow = isSuccess ? "rgba(16, 185, 129, 0.9)" : "rgba(239, 68, 68, 0.9)";
                     js.ExecuteScript(@"
-                        arguments[0].style.outline = '4px solid #EF4444';
-                        arguments[0].style.boxShadow = '0 0 20px rgba(239, 68, 68, 0.9)';
+                        arguments[0].style.outline = '4px solid " + outlineColor + @"';
+                        arguments[0].style.boxShadow = '0 0 25px " + elementGlow + @"';
                         arguments[0].style.transition = 'all 0.3s ease';
                     ", highlightElement);
                 }
@@ -111,6 +114,7 @@ public class WebUiTests : IDisposable
     public void Dashboard_ShouldLoad_AndShowCorrectTitle()
     {
         _driver.Navigate().GoToUrl(_baseUrl);
+        var headerTitle = _wait.Until(ExpectedConditions.ElementIsVisible(By.CssSelector(".logo-text h1")));
 
         try
         {
@@ -119,11 +123,12 @@ public class WebUiTests : IDisposable
         }
         catch (Exception)
         {
-            TakeScreenshot("TEST_1_Dashboard_Kontrolu_HATA", "BILEREK BOZULDU: Sayfa başlığında 'Olmayan_Yanlis_Baslik_123456' metni bulunamadı!", null, isSuccess: false);
+            // HATA durumunda başlık elementini KIRMIZI KUTU içine al
+            TakeScreenshot("TEST_1_Dashboard_Kontrolu_HATA", "BILEREK BOZULDU: Sayfa başlığında 'Olmayan_Yanlis_Baslik_123456' metni bulunamadı!", headerTitle, isSuccess: false);
             throw; // Re-throw to make xUnit mark the test as FAILED
         }
 
-        TakeScreenshot("TEST_1_Dashboard_Kontrolu", "E-Commerce Microservices Dashboard arayüzü ve servis başlıkları başarıyla doğrulandı.");
+        TakeScreenshot("TEST_1_Dashboard_Kontrolu", "E-Commerce Microservices Dashboard arayüzü ve servis başlıkları başarıyla doğrulandı.", headerTitle);
     }
 
     [Fact]
