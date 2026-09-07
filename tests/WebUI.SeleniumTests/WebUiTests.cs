@@ -36,12 +36,17 @@ public class WebUiTests : IDisposable
         _wait = new WebDriverWait(_driver, TimeSpan.FromSeconds(15));
     }
 
-    private void TakeScreenshot(string testTitle, string testDescription, IWebElement? highlightElement = null)
+    private void TakeScreenshot(string testTitle, string testDescription, IWebElement? highlightElement = null, bool isSuccess = true)
     {
         try
         {
             if (_driver is IJavaScriptExecutor js)
             {
+                string badgeBg = isSuccess ? "#10B981" : "#EF4444";
+                string badgeColor = isSuccess ? "#064E3B" : "#7F1D1D";
+                string badgeText = isSuccess ? "✔ SELENIUM E2E PASSED" : "✖ SELENIUM E2E FAILED";
+                string borderColor = isSuccess ? "#6366F1" : "#EF4444";
+
                 string script = @"
                     var existingBanner = document.getElementById('selenium-test-banner');
                     if (existingBanner) existingBanner.remove();
@@ -53,17 +58,17 @@ public class WebUiTests : IDisposable
                     banner.style.right = '20px';
                     banner.style.zIndex = '999999';
                     banner.style.background = 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)';
-                    banner.style.border = '2px solid #6366F1';
+                    banner.style.border = '2px solid " + borderColor + @"';
                     banner.style.borderRadius = '12px';
                     banner.style.padding = '14px 20px';
-                    banner.style.boxShadow = '0 10px 30px rgba(0,0,0,0.6), 0 0 20px rgba(99,102,241,0.5)';
+                    banner.style.boxShadow = '0 10px 30px rgba(0,0,0,0.6), 0 0 20px rgba(239,68,68,0.5)';
                     banner.style.fontFamily = 'Plus Jakarta Sans, sans-serif';
                     banner.style.color = '#FFFFFF';
                     banner.style.maxWidth = '420px';
 
                     banner.innerHTML = `
                         <div style='display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:6px;'>
-                            <span style='background:#10B981; color:#064E3B; font-weight:800; font-size:11px; padding:4px 10px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px;'>✔ SELENIUM E2E PASSED</span>
+                            <span style='background:" + badgeBg + @"; color:" + badgeColor + @"; font-weight:800; font-size:11px; padding:4px 10px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px;'>" + badgeText + @"</span>
                             <span style='font-size:11px; color:#A5B4FC;'>${new Date().toLocaleTimeString()}</span>
                         </div>
                         <div style='font-size:16px; font-weight:700; color:#F8FAFC; margin-top:4px;'>${arguments[0]}</div>
@@ -77,8 +82,8 @@ public class WebUiTests : IDisposable
                 if (highlightElement != null)
                 {
                     js.ExecuteScript(@"
-                        arguments[0].style.outline = '4px solid #10B981';
-                        arguments[0].style.boxShadow = '0 0 20px rgba(16, 185, 129, 0.9)';
+                        arguments[0].style.outline = '4px solid #EF4444';
+                        arguments[0].style.boxShadow = '0 0 20px rgba(239, 68, 68, 0.9)';
                         arguments[0].style.transition = 'all 0.3s ease';
                     ", highlightElement);
                 }
@@ -107,15 +112,18 @@ public class WebUiTests : IDisposable
     {
         _driver.Navigate().GoToUrl(_baseUrl);
 
-        // Verify Title
-        Assert.Contains("E-Commerce", _driver.Title);
+        try
+        {
+            // BILEREK BOZULAN ASSERTION (HATA VERDIRME TESTI)
+            Assert.Contains("Olmayan_Yanlis_Baslik_123456", _driver.Title);
+        }
+        catch (Exception)
+        {
+            TakeScreenshot("TEST_1_Dashboard_Kontrolu_HATA", "BILEREK BOZULDU: Sayfa başlığında 'Olmayan_Yanlis_Baslik_123456' metni bulunamadı!", null, isSuccess: false);
+            throw; // Re-throw to make xUnit mark the test as FAILED
+        }
 
-        // Verify main header exists
-        var headerTitle = _wait.Until(ExpectedConditions.ElementIsVisible(By.CssSelector(".logo-text h1")));
-        Assert.NotNull(headerTitle);
-        Assert.Contains("E-Commerce", headerTitle.Text);
-
-        TakeScreenshot("TEST_1_Dashboard_Kontrolu", "E-Commerce Microservices Dashboard arayüzü ve servis başlıkları başarıyla doğrulandı.", headerTitle);
+        TakeScreenshot("TEST_1_Dashboard_Kontrolu", "E-Commerce Microservices Dashboard arayüzü ve servis başlıkları başarıyla doğrulandı.");
     }
 
     [Fact]
