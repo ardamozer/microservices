@@ -83,16 +83,17 @@ public class WebUiTests : IDisposable
                 if (highlightElement != null)
                 {
                     string outlineColor = isSuccess ? "#10B981" : "#EF4444";
-                    string elementGlow = isSuccess ? "rgba(16, 185, 129, 0.9)" : "rgba(239, 68, 68, 0.9)";
+                    string elementGlow = isSuccess ? "rgba(16, 185, 129, 1)" : "rgba(239, 68, 68, 1)";
                     js.ExecuteScript(@"
+                        arguments[0].style.border = '6px solid " + outlineColor + @"';
                         arguments[0].style.outline = '4px solid " + outlineColor + @"';
-                        arguments[0].style.boxShadow = '0 0 25px " + elementGlow + @"';
-                        arguments[0].style.transition = 'all 0.3s ease';
+                        arguments[0].style.boxShadow = '0 0 35px " + elementGlow + @"';
+                        arguments[0].style.borderRadius = '8px';
                     ", highlightElement);
                 }
             }
 
-            Thread.Sleep(400); // Allow browser to render overlay banner
+            Thread.Sleep(500); // Allow browser to render overlay banner and bold borders
 
             if (_driver is ITakesScreenshot screenshotDriver)
             {
@@ -116,19 +117,11 @@ public class WebUiTests : IDisposable
         _driver.Navigate().GoToUrl(_baseUrl);
         var headerTitle = _wait.Until(ExpectedConditions.ElementIsVisible(By.CssSelector(".logo-text h1")));
 
-        try
-        {
-            // BILEREK BOZULAN ASSERTION (HATA VERDIRME TESTI)
-            Assert.Contains("Olmayan_Yanlis_Baslik_123456", _driver.Title);
-        }
-        catch (Exception)
-        {
-            // HATA durumunda başlık elementini KIRMIZI KUTU içine al
-            TakeScreenshot("TEST_1_Dashboard_Kontrolu_HATA", "BILEREK BOZULDU: Sayfa başlığında 'Olmayan_Yanlis_Baslik_123456' metni bulunamadı!", headerTitle, isSuccess: false);
-            throw; // Re-throw to make xUnit mark the test as FAILED
-        }
+        // Verify Title
+        Assert.Contains("E-Commerce", _driver.Title);
+        Assert.Contains("E-Commerce", headerTitle.Text);
 
-        TakeScreenshot("TEST_1_Dashboard_Kontrolu", "E-Commerce Microservices Dashboard arayüzü ve servis başlıkları başarıyla doğrulandı.", headerTitle);
+        TakeScreenshot("TEST_1_Dashboard_Kontrolu", "E-Commerce Microservices Dashboard arayüzü ve servis başlıkları başarıyla doğrulandı.", headerTitle, isSuccess: true);
     }
 
     [Fact]
