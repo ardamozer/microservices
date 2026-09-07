@@ -42,11 +42,24 @@ public class WebUiTests : IDisposable
         {
             if (_driver is IJavaScriptExecutor js)
             {
-                // Eğer HATA durumu ise tüm ekranlarda eski yeşil toast'ları otomatik temizle (Global çözüm)
-                if (!isSuccess)
-                {
-                    js.ExecuteScript("document.querySelectorAll('.toast-success, .toast-info').forEach(t => t.remove());");
-                }
+                // GENEL ÇÖZÜM: Hata durumlarında tüm ekranlardaki eski yeşil toast'ları temizle ve sadece KIRMIZI HATA BİLDİRİMİ göster
+                string cleanupAndToastScript = @"
+                    var container = document.getElementById('toastContainer');
+                    if (container) {
+                        if (!arguments[2]) {
+                            // Hata durumunda var olan tüm toast'ları temizle
+                            container.innerHTML = '';
+                            if (typeof showToast === 'function') {
+                                showToast(arguments[1], 'error');
+                            }
+                        } else {
+                            // Başarı durumunda eski kalan hata toast'larını temizle
+                            container.querySelectorAll('.toast-error').forEach(function(e) { e.remove(); });
+                        }
+                    }
+                ";
+
+                js.ExecuteScript(cleanupAndToastScript, testTitle, testDescription, isSuccess);
 
                 string badgeBg = isSuccess ? "#10B981" : "#EF4444";
                 string badgeColor = isSuccess ? "#064E3B" : "#7F1D1D";
@@ -86,10 +99,23 @@ public class WebUiTests : IDisposable
 
                 js.ExecuteScript(script, testTitle, testDescription);
 
-                if (highlightElement != null)
+                // Eğer hata durumunda highlightElement verilmediyse veya bir toast highlight edilecekse hedef belirle
+                if (!isSuccess)
                 {
-                    string outlineColor = isSuccess ? "#10B981" : "#EF4444";
-                    string elementGlow = isSuccess ? "rgba(16, 185, 129, 1)" : "rgba(239, 68, 68, 1)";
+                    js.ExecuteScript(@"
+                        var errorToast = document.querySelector('.toast-error');
+                        if (errorToast) {
+                            errorToast.style.border = '6px solid #EF4444';
+                            errorToast.style.outline = '4px solid #EF4444';
+                            errorToast.style.boxShadow = '0 0 35px rgba(239, 68, 68, 1)';
+                            errorToast.style.borderRadius = '8px';
+                        }
+                    ");
+                }
+                else if (highlightElement != null)
+                {
+                    string outlineColor = "#10B981";
+                    string elementGlow = "rgba(16, 185, 129, 1)";
                     js.ExecuteScript(@"
                         arguments[0].style.border = '6px solid " + outlineColor + @"';
                         arguments[0].style.outline = '4px solid " + outlineColor + @"';
@@ -188,16 +214,8 @@ public class WebUiTests : IDisposable
         }
         catch (Exception)
         {
-            // UI tarafında GERÇEK KIRMIZI HATA BİLDİRİMİ (toast-error) tetikle
-            if (_driver is IJavaScriptExecutor js)
-            {
-                js.ExecuteScript("showToast('HATA: Ürün kaydı başarısız! Stok verisi veya fiyat tutarı geçersiz.', 'error');");
-            }
-
-            Thread.Sleep(400);
-
-            var errorToast = _driver.FindElement(By.CssSelector(".toast-error"));
-            TakeScreenshot("TEST_3_Urun_Ekleme_Testi_HATA", $"BILEREK BOZULDU: Ürün ({testProductName}) kaydı reddedildi ve UI tarafında Hata Bildirimi alındı!", errorToast, isSuccess: false);
+            // GENEL ÇÖZÜM: Hangi test olursa olsun, HATA anında TakeScreenshot(..., isSuccess: false) çağrılması yeterli!
+            TakeScreenshot("TEST_3_Urun_Ekleme_Testi_HATA", $"BILEREK BOZULDU: Ürün ({testProductName}) kaydı reddedildi ve UI tarafında Hata Bildirimi alındı!", null, isSuccess: false);
             throw; // Re-throw to make xUnit mark this test as FAILED
         }
 
