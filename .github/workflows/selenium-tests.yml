@@ -62,6 +62,14 @@ jobs:
         run: |
           docker compose logs
 
+      - name: Upload Test Screenshots (UI Pictures)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selenium-ui-screenshots
+          path: tests/WebUI.SeleniumTests/bin/Debug/net8.0/screenshots/
+          if-no-files-found: ignore
+
       - name: Teardown Docker Environment
         if: always()
         run: |

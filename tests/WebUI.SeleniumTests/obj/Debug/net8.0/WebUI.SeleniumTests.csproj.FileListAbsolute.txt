@@ -102,3 +102,4 @@ D:\ardaclaude\Microservices\tests\WebUI.SeleniumTests\obj\Debug\net8.0\refint\We
 D:\ardaclaude\Microservices\tests\WebUI.SeleniumTests\obj\Debug\net8.0\WebUI.SeleniumTests.pdb
 D:\ardaclaude\Microservices\tests\WebUI.SeleniumTests\obj\Debug\net8.0\WebUI.SeleniumTests.genruntimeconfig.cache
 D:\ardaclaude\Microservices\tests\WebUI.SeleniumTests\obj\Debug\net8.0\ref\WebUI.SeleniumTests.dll
+D:\ardaclaude\Microservices\tests\WebUI.SeleniumTests\obj\Debug\net8.0\WebUI.SeleniumTests.sourcelink.json

@@ -36,6 +36,25 @@ public class WebUiTests : IDisposable
         _wait = new WebDriverWait(_driver, TimeSpan.FromSeconds(15));
     }
 
+    private void TakeScreenshot(string name)
+    {
+        try
+        {
+            if (_driver is ITakesScreenshot screenshotDriver)
+            {
+                var screenshot = screenshotDriver.GetScreenshot();
+                var directory = Path.Combine(Directory.GetCurrentDirectory(), "screenshots");
+                Directory.CreateDirectory(directory);
+                var filePath = Path.Combine(directory, $"{name}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.png");
+                screenshot.SaveAsFile(filePath);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to take screenshot: {ex.Message}");
+        }
+    }
+
     [Fact]
     public void Dashboard_ShouldLoad_AndShowCorrectTitle()
     {
@@ -48,6 +67,8 @@ public class WebUiTests : IDisposable
         var headerTitle = _wait.Until(ExpectedConditions.ElementIsVisible(By.CssSelector(".logo-text h1")));
         Assert.NotNull(headerTitle);
         Assert.Contains("E-Commerce", headerTitle.Text);
+
+        TakeScreenshot("Dashboard_Loaded");
     }
 
     [Fact]
@@ -73,6 +94,8 @@ public class WebUiTests : IDisposable
         // Verify toast notification or presence in user list
         var toastMessage = _wait.Until(ExpectedConditions.ElementIsVisible(By.ClassName("toast")));
         Assert.NotNull(toastMessage);
+
+        TakeScreenshot("User_Created");
     }
 
     [Fact]
@@ -101,6 +124,8 @@ public class WebUiTests : IDisposable
         // Verify toast message
         var toastMessage = _wait.Until(ExpectedConditions.ElementIsVisible(By.ClassName("toast")));
         Assert.NotNull(toastMessage);
+
+        TakeScreenshot("Product_Created");
     }
 
     public void Dispose()
